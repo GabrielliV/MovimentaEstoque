@@ -3,14 +3,15 @@ package com.gabrielli.controla_estoque.services.impl;
 import com.gabrielli.controla_estoque.dto.EstoqueProdutoDTO;
 import com.gabrielli.controla_estoque.entity.Estoque;
 import com.gabrielli.controla_estoque.entity.Produto;
+import com.gabrielli.controla_estoque.exception.EstoqueException;
 import com.gabrielli.controla_estoque.mapper.EstoqueMapper;
 import com.gabrielli.controla_estoque.repository.EstoqueRepository;
-import com.gabrielli.controla_estoque.repository.ProdutoRepository;
 import com.gabrielli.controla_estoque.services.EstoqueService;
 import com.gabrielli.controla_estoque.services.ProdutoService;
 import com.gabrielli.controla_estoque.types.TipoMovimentacao;
 import com.gabrielli.controla_estoque.types.TipoProduto;
 import com.sun.istack.NotNull;
+import javassist.NotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class EstoqueServiceImpl implements EstoqueService {
     }
 
     private void atualizaEstoque(Estoque estoque) throws Exception {
-        Produto produto = produtoService.getById(estoque.getProduto()).orElse(null);
+        Produto produto = produtoService.getById(estoque.getProduto());
         int saldo;
         int qtdeEstoque = produto.getQtdeEstoque();
         int qtdeMovimentacao = estoque.getQtdeMovimentada();
@@ -43,7 +44,7 @@ public class EstoqueServiceImpl implements EstoqueService {
             if (qtdeEstoque >= qtdeMovimentacao) {
                 saldo = qtdeEstoque - qtdeMovimentacao;
             } else {
-                throw new Exception("Quantidade em estoque insuficiente.");
+                throw new EstoqueException("Quantidade em estoque insuficiente.");
             }
         }
         produto.setQtdeEstoque(saldo);
@@ -67,15 +68,15 @@ public class EstoqueServiceImpl implements EstoqueService {
     }
 
     @Override
-    public EstoqueProdutoDTO getProdutoLucro(Produto produto) {
-        Produto produto1 = produtoService.getById(produto.getCodigo()).orElse(null);
-        EstoqueProdutoDTO estoqueProdutoDTO = EstoqueMapper.toDTO(produto1);
+    public EstoqueProdutoDTO getProdutoLucro(Produto produto) throws NotFoundException {
+        Produto produtoMapper = produtoService.getById(produto.getCodigo());
+        EstoqueProdutoDTO estoqueProdutoDTO = EstoqueMapper.toDTO(produtoMapper);
         setTotalSaida(estoqueProdutoDTO);
         return setTotalLucro(estoqueProdutoDTO);
     }
 
     private EstoqueProdutoDTO setTotalLucro(EstoqueProdutoDTO estoqueProdutoDTO) {
-        List<Estoque> estoqueList = estoqueRepository.findByProduto(estoqueProdutoDTO.getCodigo());
+        List<Estoque> estoqueList = estoqueRepository.findByProdutoAndTipoMovimentacao(estoqueProdutoDTO.getCodigo(), TipoMovimentacao.SAIDA);
         estoqueProdutoDTO.setValorLucro(BigDecimal.ZERO);
         for (Estoque estoque : estoqueList) {
             BigDecimal lucro = (estoque.getValorVenda().subtract(estoqueProdutoDTO.getValor())
@@ -83,10 +84,6 @@ public class EstoqueServiceImpl implements EstoqueService {
             estoqueProdutoDTO.setValorLucro(estoqueProdutoDTO.getValorLucro().add(lucro));
         }
         return estoqueProdutoDTO;
-    }
-
-    private List<EstoqueProdutoDTO> setTotalLucro(@NotNull final List<EstoqueProdutoDTO> produtosEstoqueProdutoDTOS) {
-        return produtosEstoqueProdutoDTOS.stream().map(this::setTotalLucro).collect(Collectors.toList());
     }
 
 }

@@ -4,11 +4,14 @@ import com.gabrielli.controla_estoque.dto.EstoqueProdutoDTO;
 import com.gabrielli.controla_estoque.entity.Estoque;
 import com.gabrielli.controla_estoque.entity.Produto;
 import com.gabrielli.controla_estoque.types.TipoProduto;
+import javassist.NotFoundException;
 
 import java.util.List;
 
 public interface EstoqueService {
     Estoque save(Estoque estoque) throws Exception;
+
     List<EstoqueProdutoDTO> getProdutoPorTipo(TipoProduto tipoProduto);
-    EstoqueProdutoDTO getProdutoLucro(Produto produto);
+
+    EstoqueProdutoDTO getProdutoLucro(Produto produto) throws NotFoundException;
 }

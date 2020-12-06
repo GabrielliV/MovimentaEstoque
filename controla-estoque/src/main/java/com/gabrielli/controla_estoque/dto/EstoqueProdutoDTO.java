@@ -2,7 +2,6 @@ package com.gabrielli.controla_estoque.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.gabrielli.controla_estoque.types.TipoProduto;
-import com.sun.istack.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
